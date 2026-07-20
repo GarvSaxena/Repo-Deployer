@@ -2,7 +2,12 @@ import express from "express"
 import cors from "cors"
 import {simpleGit} from "simple-git" //interface for running git commands in node js applications
 import { generateShortId } from "./utils.js";
+import path from "path"
+import { fileURLToPath } from "url";
+import { getFilesArray } from "./file.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express()
 const PORT = 3000;
@@ -16,9 +21,13 @@ app.post("/deploy", async (req,res)=> {
         return;
     }
     const ShortId = generateShortId();
-    await simpleGit().clone(repoURL,`./output/${ShortId}` )
+    await simpleGit().clone(repoURL, path.join(__dirname, `./output/${ShortId}`), ['--depth', '1'])
     console.log(repoURL)
+
+    const allFiles = getFilesArray(path.join(__dirname, `./output/${ShortId}`))
     res.json({ id: ShortId, status: "cloned" });
+
+    // aws-sdk will be used , but we have a method to upload files not directory, So we have to create a array of all the files in the directory(output/id)
 })
 
-app.listen(PORT,()=> console.log("Server Started"))
+app.listen(PORT,()=> console.log("Server Started"))
