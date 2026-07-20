@@ -1,0 +1,6 @@
+In tsconfig create this -   
+
+"outDir": "./dist", -- Compiled JavaScript output
+"rootDir": "/src"  -- Tells that where are the typescript files available
+
+Add express, redis , aws-sdk , simple-git 
