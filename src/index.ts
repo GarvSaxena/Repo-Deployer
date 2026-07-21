@@ -6,6 +6,10 @@ import path from "path"
 import { fileURLToPath } from "url";
 import { getFilesArray } from "./file.js";
 import { uploadFile } from "./r2.js";
+import {createClient} from "redis";
+const publisher = createClient();
+publisher.connect();
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +36,8 @@ app.post("/deploy", async (req,res)=> {
         const key = file.slice(outputDir.length + 1).split(path.sep).join("/");
         await uploadFile(key, file);
     }))
+
+    publisher.lPush("build-queue", id);
 
     res.json({
         id: id
