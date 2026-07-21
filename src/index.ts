@@ -5,6 +5,7 @@ import { generateShortId } from "./utils.js";
 import path from "path"
 import { fileURLToPath } from "url";
 import { getFilesArray } from "./file.js";
+import { uploadFile } from "./r2.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,14 +21,22 @@ app.post("/deploy", async (req,res)=> {
         res.status(400).json({ error: "repoURL is required" });
         return;
     }
-    const ShortId = generateShortId();
-    await simpleGit().clone(repoURL, path.join(__dirname, `./output/${ShortId}`), ['--depth', '1'])
+    const id = generateShortId();
+    await simpleGit().clone(repoURL, path.join(__dirname, `output/${id}`), ['--depth', '1'])
     console.log(repoURL)
 
-    const allFiles = getFilesArray(path.join(__dirname, `./output/${ShortId}`))
-    res.json({ id: ShortId, status: "cloned" });
+    const files = getFilesArray(path.join(__dirname, `output/${id}`))
 
-    // aws-sdk will be used , but we have a method to upload files not directory, So we have to create a array of all the files in the directory(output/id)
+    const outputDir = path.join(__dirname, `output`);
+    await Promise.all(files.map(async file => {
+        const key = file.slice(outputDir.length + 1).split(path.sep).join("/");
+        await uploadFile(key, file);
+    }))
+
+    res.json({
+        id: id
+    });
 })
 
-app.listen(PORT,()=> console.log("Server Started"))
+app.listen(PORT,()=> console.log("Server Started"))
+

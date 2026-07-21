@@ -18,6 +18,7 @@
   "dependencies": {
     "aws-sdk": "^2.1693.0",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "nanoid": "^5.1.16",
     "redis": "^6.1.0",

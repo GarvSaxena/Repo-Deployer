@@ -9,6 +9,7 @@ export const getFilesArray = (folderPath: string) =>{
     allDirFilesAndFolders.forEach(file =>{
         const fullFilePath = path.join(folderPath, file);
         if(fs.statSync(fullFilePath).isDirectory()){
+            if(file === ".git") return; // skip .git folder
             response = response.concat(getFilesArray(fullFilePath))
         }
         else{
