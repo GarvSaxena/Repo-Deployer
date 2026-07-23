@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "start": "concurrently -n \"UPLOAD,DEPLOY,HANDLER,FRONTEND\" -c \"magenta,blue,green,yellow\" \"npm run start --workspace=upload-service\" \"npm run start --workspace=deploy-service\" \"npm run start --workspace=request-handler\" \"npm run dev --workspace=frontend\""
   },
   "workspaces": [
     "upload-service",
     "deploy-service",
     "request-handler",
     "frontend"
-  ]
+  ],
+  "dependencies": {
+    "concurrently": "^10.0.3"
+  }
 }
