@@ -39,14 +39,20 @@ async function main() {
         // @ts-ignore
         const id = res.element;
 
+        await publisher.rPush(`logs:${id}`, `Downloading source files from Cloudflare R2...`);
         await downloadS3Folder(`output/${id}`);
         console.log("downloaded");
+        await publisher.rPush(`logs:${id}`, `Source files downloaded successfully.`);
 
+        await publisher.rPush(`logs:${id}`, `Starting build process...`);
         await buildProject(id);
         console.log("built");
+        await publisher.rPush(`logs:${id}`, `Build complete.`);
 
+        await publisher.rPush(`logs:${id}`, `Uploading built static files to Cloudflare R2...`);
         await copyFinalDist(id);
         console.log("uploaded");
+        await publisher.rPush(`logs:${id}`, `Files uploaded successfully. Deployment complete!`);
 
         await publisher.hSet("status", id, "deployed");
     }

@@ -9,11 +9,13 @@ function App() {
   const [deployId, setDeployId] = useState('');
   const [status, setStatus] = useState<'idle' | 'uploading' | 'deployed' | 'error'>('idle');
   const [progress, setProgress] = useState(0);
+  const [logs, setLogs] = useState<string[]>([]);
 
   const handleDeploy = async () => {
     if (!repoUrl) return;
     setStatus('uploading');
     setProgress(0);
+    setLogs([]);
     
     // Simulate upload progress
     const uploadInterval = setInterval(() => {
@@ -35,12 +37,24 @@ function App() {
   useEffect(() => {
     let pollInterval: ReturnType<typeof setInterval>;
     let progressInterval: ReturnType<typeof setInterval>;
+    let logsInterval: ReturnType<typeof setInterval>;
     
     if (deployId && status === 'uploading') {
       // Simulate build progress
       progressInterval = setInterval(() => {
         setProgress(p => (p < 95 ? p + 1 : p));
       }, 500);
+
+      logsInterval = setInterval(async () => {
+        try {
+          const res = await axios.get(`${API_URL}/deploy/logs?id=${deployId}`);
+          if (res.data.logs) {
+            setLogs(res.data.logs);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }, 1000);
 
       pollInterval = setInterval(async () => {
         try {
@@ -49,6 +63,12 @@ function App() {
             setProgress(100);
             clearInterval(pollInterval);
             clearInterval(progressInterval);
+            clearInterval(logsInterval);
+            
+            // Final log fetch to get 100% logs
+            const logRes = await axios.get(`${API_URL}/deploy/logs?id=${deployId}`);
+            if (logRes.data.logs) setLogs(logRes.data.logs);
+
             setTimeout(() => setStatus('deployed'), 500);
           }
         } catch (e) {
@@ -59,6 +79,7 @@ function App() {
     return () => {
       clearInterval(pollInterval);
       clearInterval(progressInterval);
+      clearInterval(logsInterval);
     };
   }, [deployId, status]);
 
@@ -102,6 +123,15 @@ function App() {
               <div className="progress-bar" style={{ width: `${progress}%` }}></div>
             </div>
             <p className="progress-text">{progress}%</p>
+            
+            <div className="terminal">
+              {logs.length === 0 && <span style={{color: '#666'}}>Waiting for logs...</span>}
+              {logs.map((log, index) => (
+                <div key={index} className="log-line">
+                  <span className="log-prefix">~</span> {log}
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="status-card">

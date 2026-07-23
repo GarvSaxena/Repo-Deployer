@@ -54,6 +54,7 @@ app.post("/deploy", async (req, res) => {
 
     try {
         process.env.GIT_TERMINAL_PROMPT = "0";
+        await publisher.rPush(`logs:${id}`, `Cloning repository ${repoUrl}...`);
         await simpleGit().clone(repoUrl, path.join(__dirname, `output/${id}`), ['--depth', '1']);
     } catch (e: any) {
         console.error("Git clone error:", e);
@@ -62,10 +63,12 @@ app.post("/deploy", async (req, res) => {
     }
 
     console.log("Cloned repo:", repoUrl);
+    await publisher.rPush(`logs:${id}`, `Repository cloned successfully.`);
 
     const files = getFilesArray(path.join(__dirname, `output/${id}`));
 
     try {
+        await publisher.rPush(`logs:${id}`, `Uploading ${files.length} raw files to Cloudflare R2...`);
         await Promise.all(files.map(async file => {
             const key = file.slice(__dirname.length + 1).split(path.sep).join("/");
             await uploadFile(key, file);
@@ -76,6 +79,7 @@ app.post("/deploy", async (req, res) => {
         return;
     }
 
+    await publisher.rPush(`logs:${id}`, `Raw files uploaded successfully. Adding to build queue...`);
     await publisher.lPush("build-queue", id);
     await publisher.hSet("status", id, "uploaded");
 
@@ -97,6 +101,14 @@ app.get("/deploy/status", async (req, res) => {
     const response = await subscriber.hGet("status", id);
     res.json({
         status: response
+    });
+});
+
+app.get("/deploy/logs", async (req, res) => {
+    const id = req.query.id as string;
+    const logs = await subscriber.lRange(`logs:${id}`, 0, -1);
+    res.json({
+        logs: logs
     });
 });
 
