@@ -34,6 +34,8 @@ import { createClient } from "redis";
 
 const publisher = createClient();
 await publisher.connect();
+const subscriber = createClient();
+await subscriber.connect();
 console.log("Connected to Redis");
 
 const app = express();
@@ -75,9 +77,26 @@ app.post("/deploy", async (req, res) => {
     }
 
     await publisher.lPush("build-queue", id);
+    await publisher.hSet("status", id, "uploaded");
 
     res.json({
         id: id
+    });
+});
+
+app.get("/status", async (req, res) => {
+    const id = req.query.id as string;
+    const response = await subscriber.hGet("status", id);
+    res.json({
+        status: response
+    });
+});
+
+app.get("/deploy/status", async (req, res) => {
+    const id = req.query.id as string;
+    const response = await subscriber.hGet("status", id);
+    res.json({
+        status: response
     });
 });
 

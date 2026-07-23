@@ -20,12 +20,15 @@ if (fs.existsSync(envPath)) {
 }
 
 import { createClient, commandOptions } from "redis";
-import { downloadS3Folder } from "./aws.js";
+import { downloadS3Folder, copyFinalDist } from "./aws.js";
+import { buildProject } from "./utils.js";
 
 const subscriber = createClient();
+const publisher = createClient();
 
 async function main() {
     await subscriber.connect();
+    await publisher.connect();
     console.log("Connected to Redis, listening for queue...");
     while(1) {
         const res = await subscriber.brPop(
@@ -38,6 +41,14 @@ async function main() {
 
         await downloadS3Folder(`output/${id}`);
         console.log("downloaded");
+
+        await buildProject(id);
+        console.log("built");
+
+        await copyFinalDist(id);
+        console.log("uploaded");
+
+        await publisher.hSet("status", id, "deployed");
     }
 }
 

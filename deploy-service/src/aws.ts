@@ -5,13 +5,13 @@ import fs from "fs";
 import path from "path";
 dotenv.config();
 
-export async function downloadS3Folder(prefix: string) {
+const getS3Client = () => {
     const endpoint = process.env.R2_ENDPOINT;
     if (!endpoint) {
         throw new Error("R2_ENDPOINT is missing or empty in environment variables.");
     }
 
-    const s3 = new S3({
+    return new S3({
         credentials: new Credentials({
             accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
             secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
@@ -21,6 +21,10 @@ export async function downloadS3Folder(prefix: string) {
         region: "auto",
         s3ForcePathStyle: true,
     });
+};
+
+export async function downloadS3Folder(prefix: string) {
+    const s3 = getS3Client();
 
     const allFiles = await s3.listObjectsV2({
         Bucket: "repo-deploy",
@@ -52,3 +56,37 @@ export async function downloadS3Folder(prefix: string) {
     console.log("awaiting");
     await Promise.all(allPromises.filter(x => x !== undefined));
 }
+
+export async function copyFinalDist(id: string) {
+    const folderPath = path.join(__dirname, `output/${id}/dist`);
+    const allFiles = getAllFiles(folderPath);
+    await Promise.all(allFiles.map(file => {
+        return uploadFile(`dist/${id}/` + file.slice(folderPath.length + 1), file);
+    }));
+}
+
+const getAllFiles = (folderPath: string) => {
+    let response: string[] = [];
+
+    const allFilesAndFolders = fs.readdirSync(folderPath);
+    allFilesAndFolders.forEach(file => {
+        const fullFilePath = path.join(folderPath, file);
+        if (fs.statSync(fullFilePath).isDirectory()) {
+            response = response.concat(getAllFiles(fullFilePath));
+        } else {
+            response.push(fullFilePath);
+        }
+    });
+    return response;
+};
+
+const uploadFile = async (fileName: string, localFilePath: string) => {
+    const s3 = getS3Client();
+    const fileContent = fs.readFileSync(localFilePath);
+    const response = await s3.upload({
+        Body: fileContent,
+        Bucket: "repo-deploy",
+        Key: fileName,
+    }).promise();
+    console.log(response);
+};
