@@ -8,6 +8,7 @@
   "workspaces": [
     "upload-service",
     "deploy-service",
-    "request-handler"
+    "request-handler",
+    "frontend"
   ]
 }
