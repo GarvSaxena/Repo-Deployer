@@ -37,8 +37,10 @@ app.get("/*", async (req, res) => {
     // Example: id.100xdevs.com -> id
     const host = req.hostname;
     const id = host.split(".")[0];
-    const filePath = req.path;
-
+    let filePath = req.path;
+    if (filePath === "/") {
+        filePath = "/index.html";
+    }
     try {
         const contents = await s3.getObject({
             Bucket: process.env.R2_BUCKET_NAME || "repo-deploy",
