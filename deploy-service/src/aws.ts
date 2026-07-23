@@ -3,8 +3,11 @@ const { S3, Credentials } = AWS;
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const getS3Client = () => {
     const endpoint = process.env.R2_ENDPOINT;
     if (!endpoint) {
@@ -58,7 +61,17 @@ export async function downloadS3Folder(prefix: string) {
 }
 
 export async function copyFinalDist(id: string) {
-    const folderPath = path.join(__dirname, `output/${id}/dist`);
+    const rootFolderPath = path.join(__dirname, `output/${id}`);
+    let folderPath = path.join(rootFolderPath, 'dist');
+    
+    if (!fs.existsSync(folderPath)) {
+        if (fs.existsSync(path.join(rootFolderPath, 'build'))) {
+            folderPath = path.join(rootFolderPath, 'build');
+        } else {
+            folderPath = rootFolderPath;
+        }
+    }
+
     const allFiles = getAllFiles(folderPath);
     await Promise.all(allFiles.map(file => {
         return uploadFile(`dist/${id}/` + file.slice(folderPath.length + 1), file);

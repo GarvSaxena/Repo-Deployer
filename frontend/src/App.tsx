@@ -84,8 +84,8 @@ function App() {
             <p style={{ color: 'var(--text-secondary)' }}>Your project is now live on our edge network.</p>
             
             <div className="url-box">
-              <a href={`http://${deployId}.100xdevs.com:3001`} target="_blank" rel="noopener noreferrer">
-                http://{deployId}.100xdevs.com:3001
+              <a href={`http://${deployId}.repo-deployer.localhost:3001`} target="_blank" rel="noopener noreferrer">
+                http://{deployId}.repo-deployer.localhost:3001
               </a>
               <ArrowRight size={20} style={{ color: 'var(--text-secondary)' }} />
             </div>
