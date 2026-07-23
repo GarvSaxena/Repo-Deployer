@@ -2,49 +2,6 @@
 
 A highly scalable, distributed platform that acts as a clone of Vercel. It allows users to input a public GitHub repository URL, automatically clones and builds the project in the cloud, and serves the static files dynamically on a custom subdomain.
 
-## System Architecture
-
-The project is built using a microservices architecture to ensure high availability, fault tolerance, and scalability. It utilizes a Redis queue to decouple the API ingestion from the heavy lifting of the build process.
-
-```mermaid
-graph TD
-    %% Define Colors
-    classDef user fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#fff
-    classDef frontend fill:#ec4899,stroke:#db2777,stroke-width:2px,color:#fff
-    classDef service fill:#8b5cf6,stroke:#7c3aed,stroke-width:2px,color:#fff
-    classDef storage fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff
-    classDef redis fill:#ef4444,stroke:#dc2626,stroke-width:2px,color:#fff
-
-    %% Nodes
-    User([User]):::user
-    Visitor([Web Visitor]):::user
-    
-    Frontend(React UI):::frontend
-    
-    Upload(Upload API):::service
-    Deploy(Deploy Worker):::service
-    Handler(Request Proxy):::service
-    
-    Redis[(Redis Queue & Logs)]:::redis
-    Storage[(Cloudflare R2 Storage)]:::storage
-    
-    %% Flow
-    User -->|Paste URL| Frontend
-    Frontend -->|Send to API| Upload
-    
-    Upload -->|Upload Source| Storage
-    Upload -->|Queue Job| Redis
-    
-    Deploy -->|Fetch Job| Redis
-    Deploy -->|Download Source| Storage
-    Deploy -->|Build & Upload| Storage
-    
-    Frontend -.->|Poll Live Progress| Redis
-    
-    Visitor -->|Visit Site URL| Handler
-    Handler -->|Serve Static Site| Storage
-```
-
 ## Microservices Breakdown
 
 ### 1. Frontend (React / Vite)
