@@ -8,24 +8,41 @@ The project is built using a microservices architecture to ensure high availabil
 
 ```mermaid
 graph TD
-    User([User]) -->|Inputs GitHub URL| Frontend(React Frontend)
-    Frontend -->|POST /deploy| UploadService(Upload Service)
+    %% Define Colors
+    classDef user fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#fff
+    classDef frontend fill:#ec4899,stroke:#db2777,stroke-width:2px,color:#fff
+    classDef service fill:#8b5cf6,stroke:#7c3aed,stroke-width:2px,color:#fff
+    classDef storage fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff
+    classDef redis fill:#ef4444,stroke:#dc2626,stroke-width:2px,color:#fff
+
+    %% Nodes
+    User([User]):::user
+    Visitor([Web Visitor]):::user
     
-    UploadService -->|1. Clones Repo| GitHub[(GitHub)]
-    UploadService -->|2. Uploads Raw Source| R2_Source[(Cloudflare R2: output/)]
-    UploadService -->|3. Pushes to Queue| RedisQueue[(Redis Build Queue)]
+    Frontend(React UI):::frontend
     
-    DeployService(Deploy Service Worker) -->|4. Pops from Queue| RedisQueue
-    DeployService -->|5. Downloads Source| R2_Source
-    DeployService -->|6. Builds npm run build| BuildEnv[Local Build Env]
-    DeployService -->|7. Uploads Build Files| R2_Dist[(Cloudflare R2: dist/)]
-    DeployService -->|8. Updates Status & Logs| RedisStatus[(Redis KV Store)]
+    Upload(Upload API):::service
+    Deploy(Deploy Worker):::service
+    Handler(Request Proxy):::service
     
-    Frontend -->|Polls Status & Live Logs| UploadService
-    UploadService -->|Reads| RedisStatus
+    Redis[(Redis Queue & Logs)]:::redis
+    Storage[(Cloudflare R2 Storage)]:::storage
     
-    Visitor([Web Visitor]) -->|Visits id.lvh.me:3001| RequestHandler(Request Handler)
-    RequestHandler -->|Fetches Static Files| R2_Dist
+    %% Flow
+    User -->|Paste URL| Frontend
+    Frontend -->|Send to API| Upload
+    
+    Upload -->|Upload Source| Storage
+    Upload -->|Queue Job| Redis
+    
+    Deploy -->|Fetch Job| Redis
+    Deploy -->|Download Source| Storage
+    Deploy -->|Build & Upload| Storage
+    
+    Frontend -.->|Poll Live Progress| Redis
+    
+    Visitor -->|Visit Site URL| Handler
+    Handler -->|Serve Static Site| Storage
 ```
 
 ## Microservices Breakdown
