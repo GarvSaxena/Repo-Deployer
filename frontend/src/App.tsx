@@ -8,35 +8,58 @@ function App() {
   const [repoUrl, setRepoUrl] = useState('');
   const [deployId, setDeployId] = useState('');
   const [status, setStatus] = useState<'idle' | 'uploading' | 'deployed' | 'error'>('idle');
+  const [progress, setProgress] = useState(0);
 
   const handleDeploy = async () => {
     if (!repoUrl) return;
     setStatus('uploading');
+    setProgress(0);
+    
+    // Simulate upload progress
+    const uploadInterval = setInterval(() => {
+      setProgress(p => (p < 40 ? p + 2 : p));
+    }, 500);
+
     try {
       const res = await axios.post(`${API_URL}/deploy`, { repoUrl });
+      clearInterval(uploadInterval);
+      setProgress(50);
       setDeployId(res.data.id);
     } catch (error) {
+      clearInterval(uploadInterval);
       console.error(error);
       setStatus('error');
     }
   };
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (deployId && status !== 'deployed' && status !== 'error') {
-      interval = setInterval(async () => {
+    let pollInterval: ReturnType<typeof setInterval>;
+    let progressInterval: ReturnType<typeof setInterval>;
+    
+    if (deployId && status === 'uploading') {
+      // Simulate build progress
+      progressInterval = setInterval(() => {
+        setProgress(p => (p < 95 ? p + 1 : p));
+      }, 500);
+
+      pollInterval = setInterval(async () => {
         try {
           const res = await axios.get(`${API_URL}/deploy/status?id=${deployId}`);
           if (res.data.status === 'deployed') {
-            setStatus('deployed');
-            clearInterval(interval);
+            setProgress(100);
+            clearInterval(pollInterval);
+            clearInterval(progressInterval);
+            setTimeout(() => setStatus('deployed'), 500);
           }
         } catch (e) {
           console.error(e);
         }
       }, 3000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(pollInterval);
+      clearInterval(progressInterval);
+    };
   }, [deployId, status]);
 
   return (
@@ -71,11 +94,14 @@ function App() {
           </>
         ) : status === 'uploading' ? (
           <div className="status-card">
-            <div className="spinner"></div>
             <h2>Building Project</h2>
             <p style={{ color: 'var(--text-secondary)' }}>
               Cloning repository, installing dependencies, and building...
             </p>
+            <div className="progress-container">
+              <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+            </div>
+            <p className="progress-text">{progress}%</p>
           </div>
         ) : (
           <div className="status-card">
@@ -95,6 +121,7 @@ function App() {
                 setStatus('idle');
                 setRepoUrl('');
                 setDeployId('');
+                setProgress(0);
               }}
               style={{ marginTop: '24px', background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}
             >
