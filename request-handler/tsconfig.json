@@ -3,12 +3,11 @@
   "compilerOptions": {
     // File Layout
     // "rootDir": "./src",
-    "outDir": "./dist",
+    // "outDir": "./dist",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
-    "rootDir": "./src",
     "target": "esnext",
     "types": [],
     // For nodejs:
@@ -17,9 +16,9 @@
     // and npm install -D @types/node
 
     // Other Outputs
-    "sourceMap": false,
-    "declaration": false,
-    "declarationMap": false,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -41,6 +40,5 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-  },
-  "exclude": ["node_modules", "dist", "output"]
+  }
 }

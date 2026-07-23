@@ -3,3 +3,7 @@ dist/
 output/
 *.tsbuildinfo
 .env
+.env.*
+*.log
+*.map
+*.d.ts
